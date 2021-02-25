@@ -14,10 +14,12 @@ import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.externalSystem.model.DataNode
 import com.intellij.openapi.externalSystem.model.project.ProjectData
 import com.intellij.openapi.externalSystem.model.task.ExternalSystemTaskId
+import com.intellij.openapi.externalSystem.service.execution.ProgressExecutionMode
 import com.intellij.openapi.externalSystem.service.project.ExternalProjectRefreshCallback
 import com.intellij.openapi.externalSystem.service.project.ProjectDataManager
 import com.intellij.openapi.externalSystem.settings.ExternalProjectSettings
 import com.intellij.openapi.externalSystem.util.ExternalSystemApiUtil
+import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
@@ -27,7 +29,6 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.util.ThreeState
 import org.jetbrains.jps.cmdline.LogSetup
 import org.jetbrains.kotlin.tools.cachesuploader.CompilationOutputsUploader
 import org.jetbrains.kotlin.tools.gradleimportcmd.GradleModelBuilderOverheadContainer
@@ -44,8 +45,6 @@ import java.lang.reflect.Proxy
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
 
 private fun getUsedMemory(): Long {
     val runtime = Runtime.getRuntime()
@@ -73,32 +72,52 @@ fun importProject(projectPath: String, jdkPath: String, inspectForMemoryLeak: Bo
 
 private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixName: String, inspectForMemoryLeak: Boolean): Project? {
     printProgress("Opening project")
-    val path = projectPath.replace(File.separatorChar, '/')
-    val vfsProject = LocalFileSystem.getInstance().findFileByPath(path)
+    val pathString = projectPath.replace(File.separatorChar, '/')
+    val vfsProject = LocalFileSystem.getInstance().findFileByPath(pathString)
     if (vfsProject == null) {
-        printMessage("Cannot find directory $path", MessageStatus.ERROR)
+        printMessage("Cannot find directory $pathString", MessageStatus.ERROR)
         return null
     }
 
-    if (! File(path, ".idea").exists()) {
-        File(path, ".idea").mkdirs()
+    if (! File(pathString, ".idea").exists()) {
+        File(pathString, ".idea").mkdirs()
     }
-    val project = ProjectUtil.openProject(path, null, false)
 
+//    0
+//    val project = ProjectUtil.openProject(path, null, false)
+//    1
+//    val openProjectOptions = OpenProjectTask.withProjectToClose(null, false).withRunConfigurators()
+//    val project = ProjectManagerEx.getInstanceEx().openProject(Paths.get(pathString), openProjectOptions)
+//    2
+//    val project = ProjectUtil.openOrCreateProject("asd")
+//    3
+//    val project = ProjectUtil.openOrImport(Paths.get(pathString))
+//    4
+    var project = ProjectUtil.openOrCreateProject("kotlin")
+//System.getProperty(propertyName);
+    val a = ProjectUtil.getOpenProjects()
+    println(a)
     if (project == null) {
         printMessage("Unable to open project", MessageStatus.ERROR)
         return null
     }
+
+
     printProgress("Project loaded, refreshing from Gradle")
     WriteAction.runAndWait<RuntimeException> {
         val sdkType = JavaSdk.getInstance()
         val mySdk = sdkType.createJdk("JDK_1.8", jdkPath, false)
 
         ProjectJdkTable.getInstance().addJdk(mySdk)
-        ProjectRootManager.getInstance(project).projectSdk = mySdk
+        ProjectRootManager.getInstance(project!!).projectSdk = mySdk
     }
+    ProjectManagerEx.getInstance().closeAndDispose(project)
 
-
+    project = ProjectUtil.openOrCreateProject("kotlin")
+    if(project == null) {
+        printMessage("Unable to open project", MessageStatus.ERROR)
+        return null
+    }
     val startTime = System.nanoTime() //NB do not use currentTimeMillis() as it is sensitive to time adjustment
     startOperation(OperationType.TEST, "Import project")
     reportStatistics("used_memory_before_import$metricsSuffixName", getUsedMemory().toString())
@@ -111,7 +130,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
                 if (externalProject != null) {
                     finishOperation(OperationType.TEST, "Import project", duration = (System.nanoTime() - startTime) / 1000_000)
                     ServiceManager.getService(ProjectDataManager::class.java)
-                            .importData(externalProject, project, true)
+                            .importData(externalProject, project!!, true)
                 } else {
                     finishOperation(OperationType.TEST, "Import project", "Filed to import project. See IDEA logs for details")
                     throw RuntimeException("Failed to import project due to unknown error")
@@ -130,7 +149,19 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
         }
     }
 
-    linkAndRefreshGradleProject(path, project)
+//    linkAndRefreshGradleProject(pathString, project)
+    //ExternalSystemActionsCollector.trigger(project, GradleConstants.SYSTEM_ID, this, e)
+//    val importSpec = ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
+//    ExternalSystemUtil.refreshProjects(importSpec.forceWhenUptodate(true))
+    ExternalSystemUtil.refreshProject(
+        project,
+        GradleConstants.SYSTEM_ID,
+        pathString,
+        refreshCallback,
+        false,
+        ProgressExecutionMode.MODAL_SYNC,
+        true
+    )
 
     reportStatistics("used_memory_after_import$metricsSuffixName", getUsedMemory().toString())
     reportStatistics("total_memory_after_import$metricsSuffixName", Runtime.getRuntime().totalMemory().toString())
@@ -146,6 +177,12 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     ApplicationManager.getApplication().saveSettings()
     ApplicationManager.getApplication().saveAll()
 
+    project = ProjectUtil.openOrCreateProject("kotlin")
+    if(project == null) {
+        printMessage("Unable to open project", MessageStatus.ERROR)
+        return null
+    }
+
     printProgress("Import done")
     return project
 }
@@ -156,7 +193,7 @@ fun setDelegationMode(path: String, project: Project, delegationMode: Boolean) {
     projectSettings.externalProjectPath = path
     projectSettings.delegatedBuild = delegationMode
     projectSettings.distributionType = DistributionType.DEFAULT_WRAPPED // use default wrapper
-    projectSettings.storeProjectFilesExternally = ThreeState.NO
+    //projectSettings.storeProjectFilesExternally = ThreeState.NO
     projectSettings.withQualifiedModuleNames()
 
     val systemSettings = ExternalSystemApiUtil.getSettings(project, GradleConstants.SYSTEM_ID)
@@ -222,7 +259,7 @@ fun buildProject(project: Project?): Boolean {
 
         CompilerConfigurationImpl.getInstance(project).setBuildProcessHeapSize(3500)
         CompilerWorkspaceConfiguration.getInstance(project).PARALLEL_COMPILATION = true
-        CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS = "-Dkotlin.daemon.enabled=false"
+        //CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS = "-Dkotlin.daemon.enabled=false"
 
         val compileContext = InternalCompileDriver(project).rebuild(callback)
         while (!finishedLautch.await(1, TimeUnit.MINUTES)) {

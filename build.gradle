@@ -39,7 +39,7 @@ dependencies {
 intellij {
     def ideVersion = System.getenv("ide_version")
     if (ideVersion == null) {
-      ideVersion = '202.8194.7'
+      ideVersion = '211.7442.40'
     } else {
       println("Using IDE: $ideVersion")
     }
@@ -72,7 +72,7 @@ tasks.getByName('runIde') {
     }
     def absoluteWorkingDir = new File(workingDir).getCanonicalFile().getAbsolutePath().toString()
     println("Executing test [$testName] in folder [$absoluteWorkingDir]")
-    systemProperties = ['java.awt.headless': 'true', 'projectPath': absoluteWorkingDir, 'jdkPath': System.getenv('JDK_18')]
+    systemProperties = ['java.awt.headless': 'true', 'projectPath': absoluteWorkingDir, 'jdkPath': System.getenv('JDK_18'), 'idea.project.path': '/Users/Aleksei.Cherepanov/jb/kotlin8']
     args = ['runIntegrationTest', testName]
     
     maxHeapSize = heapSize
@@ -81,7 +81,7 @@ tasks.getByName('runIde') {
         jvmArgs = ['-XX:+UseSerialGC', '-XX:MinHeapFreeRatio=1', '-XX:MaxHeapFreeRatio=99']
     }
 
-    jbrVersion = '8u202b1483.24'
+    jbrVersion = '11_0_8b944.34'
 }
 
 group 'org.jetbrains'
