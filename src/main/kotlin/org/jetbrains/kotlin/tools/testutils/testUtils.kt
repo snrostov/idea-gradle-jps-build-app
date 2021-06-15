@@ -32,7 +32,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import org.jetbrains.jps.cmdline.LogSetup
 import org.jetbrains.kotlin.tools.cachesuploader.CompilationOutputsUploader
 import org.jetbrains.kotlin.tools.gradleimportcmd.GradleModelBuilderOverheadContainer
-import org.jetbrains.plugins.gradle.service.project.open.linkAndRefreshGradleProject
 import org.jetbrains.plugins.gradle.settings.DistributionType
 import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
@@ -93,12 +92,13 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 //    3
 //    val project = ProjectUtil.openOrImport(Paths.get(pathString))
 //    4
+    println("Path of root folder: ${System.getProperty("idea.project.path")}")
     var project = ProjectUtil.openOrCreateProject("kotlin")
 //System.getProperty(propertyName);
     val a = ProjectUtil.getOpenProjects()
     println(a)
     if (project == null) {
-        printMessage("Unable to open project", MessageStatus.ERROR)
+        printMessage("Unable to open project 1", MessageStatus.ERROR)
         return null
     }
 
@@ -115,7 +115,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 
     project = ProjectUtil.openOrCreateProject("kotlin")
     if(project == null) {
-        printMessage("Unable to open project", MessageStatus.ERROR)
+        printMessage("Unable to open project 2", MessageStatus.ERROR)
         return null
     }
     val startTime = System.nanoTime() //NB do not use currentTimeMillis() as it is sensitive to time adjustment
@@ -179,7 +179,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 
     project = ProjectUtil.openOrCreateProject("kotlin")
     if(project == null) {
-        printMessage("Unable to open project", MessageStatus.ERROR)
+        printMessage("Unable to open project 3", MessageStatus.ERROR)
         return null
     }
 

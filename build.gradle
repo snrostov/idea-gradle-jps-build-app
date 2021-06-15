@@ -71,8 +71,9 @@ tasks.getByName('runIde') {
         heapSize = '2G'
     }
     def absoluteWorkingDir = new File(workingDir).getCanonicalFile().getAbsolutePath().toString()
+    def containerDir = new File(absoluteWorkingDir).getParentFile().absolutePath
     println("Executing test [$testName] in folder [$absoluteWorkingDir]")
-    systemProperties = ['java.awt.headless': 'true', 'projectPath': absoluteWorkingDir, 'jdkPath': System.getenv('JDK_18'), 'idea.project.path': '/Users/Aleksei.Cherepanov/jb/kotlin8']
+    systemProperties = ['java.awt.headless': 'true', 'projectPath': absoluteWorkingDir, 'jdkPath': System.getenv('JDK_18'), 'idea.project.path': containerDir]
     args = ['runIntegrationTest', testName]
     
     maxHeapSize = heapSize
