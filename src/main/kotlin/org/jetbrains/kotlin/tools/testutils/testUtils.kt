@@ -93,7 +93,8 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 //    val project = ProjectUtil.openOrImport(Paths.get(pathString))
 //    4
     println("Path of root folder: ${System.getProperty("idea.project.path")}")
-    var project = ProjectUtil.openOrCreateProject("kotlin")
+    val projectName = "jps"
+    var project = ProjectUtil.openOrCreateProject(projectName)
 //System.getProperty(propertyName);
     val a = ProjectUtil.getOpenProjects()
     println(a)
@@ -113,7 +114,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     }
     ProjectManagerEx.getInstance().closeAndDispose(project)
 
-    project = ProjectUtil.openOrCreateProject("kotlin")
+    project = ProjectUtil.openOrCreateProject(projectName)
     if(project == null) {
         printMessage("Unable to open project 2", MessageStatus.ERROR)
         return null
@@ -177,7 +178,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     ApplicationManager.getApplication().saveSettings()
     ApplicationManager.getApplication().saveAll()
 
-    project = ProjectUtil.openOrCreateProject("kotlin")
+    project = ProjectUtil.openOrCreateProject(projectName)
     if(project == null) {
         printMessage("Unable to open project 3", MessageStatus.ERROR)
         return null
