@@ -1,5 +1,6 @@
 package org.jetbrains.kotlin.tools.testutils
 
+import com.intellij.compiler.CompilerConfiguration
 import com.intellij.compiler.CompilerConfigurationImpl
 import com.intellij.compiler.CompilerWorkspaceConfiguration
 import com.intellij.compiler.impl.InternalCompileDriver
@@ -10,6 +11,8 @@ import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.application.ex.ApplicationManagerEx
 import com.intellij.openapi.compiler.CompileStatusNotification
 import com.intellij.openapi.compiler.CompilerMessageCategory
+import com.intellij.openapi.compiler.options.ExcludeEntryDescription
+import com.intellij.openapi.compiler.options.ExcludesConfiguration
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.externalSystem.model.DataNode
 import com.intellij.openapi.externalSystem.model.project.ProjectData
@@ -23,12 +26,14 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
+import com.intellij.openapi.project.getProjectCachePath
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtil
 import org.jetbrains.jps.cmdline.LogSetup
 import org.jetbrains.kotlin.tools.cachesuploader.CompilationOutputsUploader
 import org.jetbrains.kotlin.tools.gradleimportcmd.GradleModelBuilderOverheadContainer
@@ -41,6 +46,8 @@ import java.io.FileOutputStream
 import java.lang.reflect.Array
 import java.lang.reflect.Field
 import java.lang.reflect.Proxy
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -172,6 +179,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 
     printProgress("Save IDEA projects")
 
+    // close?
     project.save()
     ProjectManagerEx.getInstanceEx().openProject(project)
     FileDocumentManager.getInstance().saveAllDocuments()
@@ -189,6 +197,12 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 }
 
 fun setDelegationMode(path: String, project: Project, delegationMode: Boolean) {
+    val configuration = CompilerConfiguration.getInstance(project)
+    val cfg: ExcludesConfiguration = configuration.getExcludedEntriesConfiguration()
+    println("$path/buildSrc")
+    val dir = VfsUtil.findFile(Paths.get("$path/buildSrc"), true)
+    cfg.addExcludeEntryDescription(ExcludeEntryDescription(dir, true, false, project))
+
     //TODO: set default mode? DefaultGradleProjectSettings.getInstance(project).isDelegatedBuild = false
     val projectSettings = GradleProjectSettings()
     projectSettings.externalProjectPath = path
