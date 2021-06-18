@@ -68,7 +68,7 @@ tasks.getByName('runIde') {
     }
     def heapSize = System.getenv("idea_heap_size")
     if (heapSize == null) {
-        heapSize = '2G'
+        heapSize = '4G'
     }
     def absoluteWorkingDir = new File(workingDir).getCanonicalFile().getAbsolutePath().toString()
     def containerDir = new File(absoluteWorkingDir).getParentFile().absolutePath
@@ -76,11 +76,15 @@ tasks.getByName('runIde') {
     systemProperties = ['java.awt.headless': 'true', 'projectPath': absoluteWorkingDir, 'jdkPath': System.getenv('JDK_18'), 'idea.project.path': containerDir]
     args = ['runIntegrationTest', testName]
     
+    println("Setting heap size to $heapSize")
     maxHeapSize = heapSize
 
     if ("true" == System.getenv("enable_serial_gc")) {
         jvmArgs = ['-XX:+UseSerialGC', '-XX:MinHeapFreeRatio=1', '-XX:MaxHeapFreeRatio=99']
     }
+
+    println("Using jvmArgs=$jvmArgs")
+
 
     jbrVersion = '11_0_8b944.34'
 }
