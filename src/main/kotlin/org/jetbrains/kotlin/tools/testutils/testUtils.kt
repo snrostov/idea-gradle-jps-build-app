@@ -58,10 +58,18 @@ private fun getUsedMemory(): Long {
 
 fun printMemory(afterGc: Boolean) {
     val runtime = Runtime.getRuntime()
-    printMessage("Low memory ${if (afterGc) "after GC" else ", invoking GC"}. Total memory=${runtime.totalMemory()}, free=${runtime.freeMemory()}", if (afterGc) MessageStatus.ERROR else MessageStatus.WARNING)
+    printMessage(
+        "Low memory ${if (afterGc) "after GC" else ", invoking GC"}. Total memory=${runtime.totalMemory()}, free=${runtime.freeMemory()}",
+        if (afterGc) MessageStatus.ERROR else MessageStatus.WARNING
+    )
 }
 
-fun importProject(projectPath: String, jdkPath: String, inspectForMemoryLeak: Boolean, metricsSuffixName: String = ""): Project? {
+fun importProject(
+    projectPath: String,
+    jdkPath: String,
+    inspectForMemoryLeak: Boolean,
+    metricsSuffixName: String = ""
+): Project? {
     val application = ApplicationManagerEx.getApplicationEx()
     return application.runReadAction(Computable<Project?> {
         return@Computable try {
@@ -74,7 +82,12 @@ fun importProject(projectPath: String, jdkPath: String, inspectForMemoryLeak: Bo
     })
 }
 
-private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixName: String, inspectForMemoryLeak: Boolean): Project? {
+private fun doImportProject(
+    projectPath: String,
+    jdkPath: String,
+    metricsSuffixName: String,
+    inspectForMemoryLeak: Boolean
+): Project? {
     printProgress("Opening project")
     val pathString = projectPath.replace(File.separatorChar, '/')
     val vfsProject = LocalFileSystem.getInstance().findFileByPath(pathString)
@@ -83,7 +96,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
         return null
     }
 
-    if (! File(pathString, ".idea").exists()) {
+    if (!File(pathString, ".idea").exists()) {
         File(pathString, ".idea").mkdirs()
     }
 
@@ -107,7 +120,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     ProjectManagerEx.getInstance().closeAndDispose(project)
 
     project = ProjectUtil.openOrCreateProject(projectName)
-    if(project == null) {
+    if (project == null) {
         printMessage("Unable to open project 2", MessageStatus.ERROR)
         return null
     }
@@ -119,13 +132,24 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     val refreshCallback = object : ExternalProjectRefreshCallback {
         override fun onSuccess(externalProject: DataNode<ProjectData>?) {
             try {
-                reportStatistics("import_duration$metricsSuffixName", ((System.nanoTime() - startTime) / 1000_000).toString())
+                reportStatistics(
+                    "import_duration$metricsSuffixName",
+                    ((System.nanoTime() - startTime) / 1000_000).toString()
+                )
                 if (externalProject != null) {
-                    finishOperation(OperationType.TEST, "Import project", duration = (System.nanoTime() - startTime) / 1000_000)
+                    finishOperation(
+                        OperationType.TEST,
+                        "Import project",
+                        duration = (System.nanoTime() - startTime) / 1000_000
+                    )
                     ServiceManager.getService(ProjectDataManager::class.java)
-                            .importData(externalProject, project!!, true)
+                        .importData(externalProject, project!!, true)
                 } else {
-                    finishOperation(OperationType.TEST, "Import project", "Filed to import project. See IDEA logs for details")
+                    finishOperation(
+                        OperationType.TEST,
+                        "Import project",
+                        "Filed to import project. See IDEA logs for details"
+                    )
                     throw RuntimeException("Failed to import project due to unknown error")
                 }
                 if (inspectForMemoryLeak) {
@@ -138,7 +162,11 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 
 
         override fun onFailure(externalTaskId: ExternalSystemTaskId, errorMessage: String, errorDetails: String?) {
-            finishOperation(OperationType.TEST, "Import project", "Filed to import project: $errorMessage. Details: $errorDetails")
+            finishOperation(
+                OperationType.TEST,
+                "Import project",
+                "Filed to import project: $errorMessage. Details: $errorDetails"
+            )
         }
     }
 
@@ -167,7 +195,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     ApplicationManager.getApplication().saveAll()
     //ProjectManagerEx.getInstance().closeAndDispose(project)
     project = ProjectUtil.openOrCreateProject(projectName)
-    if(project == null) {
+    if (project == null) {
         printMessage("Unable to open project 3", MessageStatus.ERROR)
         return null
     }
@@ -200,8 +228,10 @@ fun setDelegationMode(path: String, project: Project, delegationMode: Boolean) {
     projectSettings.withQualifiedModuleNames()
 
     val systemSettings = ExternalSystemApiUtil.getSettings(project, GradleConstants.SYSTEM_ID)
-    @Suppress("UNCHECKED_CAST") val linkedSettings: Collection<ExternalProjectSettings> = systemSettings.getLinkedProjectsSettings() as Collection<ExternalProjectSettings>
-    linkedSettings.filterIsInstance<GradleProjectSettings>().forEach { systemSettings.unlinkExternalProject(it.externalProjectPath) }
+    @Suppress("UNCHECKED_CAST") val linkedSettings: Collection<ExternalProjectSettings> =
+        systemSettings.getLinkedProjectsSettings() as Collection<ExternalProjectSettings>
+    linkedSettings.filterIsInstance<GradleProjectSettings>()
+        .forEach { systemSettings.unlinkExternalProject(it.externalProjectPath) }
 
     systemSettings.linkProject(projectSettings)
 }
@@ -232,10 +262,16 @@ fun buildProject(project: Project?): Boolean {
                 try {
                     errorsCount = errors
                     abortedStatus = aborted
-                    printMessage("Compilation done. Aborted=$aborted, Errors=$errors, Warnings=$warnings", MessageStatus.WARNING)
+                    printMessage(
+                        "Compilation done. Aborted=$aborted, Errors=$errors, Warnings=$warnings",
+                        MessageStatus.WARNING
+                    )
                     reportStatistics("jps_compilation_errors", errors.toString())
                     reportStatistics("jps_compilation_warnings", warnings.toString())
-                    reportStatistics("jps_compilation_duration", ((System.nanoTime() - compilationStarted) / 1000_000).toString())
+                    reportStatistics(
+                        "jps_compilation_duration",
+                        ((System.nanoTime() - compilationStarted) / 1000_000).toString()
+                    )
 
                     CompilerMessageCategory.values().forEach { category ->
                         compileContext.getMessages(category).forEach {
@@ -262,7 +298,8 @@ fun buildProject(project: Project?): Boolean {
 
         CompilerConfigurationImpl.getInstance(project).setBuildProcessHeapSize(3500)
         CompilerWorkspaceConfiguration.getInstance(project).PARALLEL_COMPILATION = true
-        CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS = "-Dkotlin.daemon.enabled=false"
+        CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS =
+            "-Dkotlin.daemon.enabled=false"
 
         val compileContext = InternalCompileDriver(project).rebuild(callback)
         while (!finishedLautch.await(1, TimeUnit.MINUTES)) {
@@ -270,11 +307,21 @@ fun buildProject(project: Project?): Boolean {
                 printMessage("Progress indicator says that compilation is not running.", MessageStatus.ERROR)
                 break
             }
-            printProgress("Compilation status: Errors: ${compileContext.getMessages(CompilerMessageCategory.ERROR).size}. Warnings: ${compileContext.getMessages(CompilerMessageCategory.WARNING).size}.")
+            printProgress(
+                "Compilation status: Errors: ${compileContext.getMessages(CompilerMessageCategory.ERROR).size}. Warnings: ${
+                    compileContext.getMessages(
+                        CompilerMessageCategory.WARNING
+                    ).size
+                }."
+            )
         }
 
         if (errorsCount > 0 || abortedStatus) {
-            finishOperation(OperationType.COMPILATION, "Compile project with JPS", "Compilation failed with $errorsCount errors")
+            finishOperation(
+                OperationType.COMPILATION,
+                "Compile project with JPS",
+                "Compilation failed with $errorsCount errors"
+            )
             return false
         } else {
             finishOperation(OperationType.COMPILATION, "Compile project with JPS")
@@ -301,7 +348,8 @@ private fun testExternalSubsystemForProxyMemoryLeak(externalProject: DataNode<Pr
         var errorsCount = 0
             private set
 
-        private val typesToSkip = setOf("java.lang.String", "java.lang.Integer", "java.lang.Character", "java.lang.Byte", "java.lang.Long")
+        private val typesToSkip =
+            setOf("java.lang.String", "java.lang.Integer", "java.lang.Character", "java.lang.Byte", "java.lang.Long")
 
         private fun shouldBeProcessed(toProcess: Any?, processed: Set<Any>): Boolean {
             return toProcess != null && !typesToSkip.contains(toProcess.javaClass.name) && !processed.contains(toProcess)
@@ -313,7 +361,12 @@ private fun testExternalSubsystemForProxyMemoryLeak(externalProject: DataNode<Pr
             leakedObjects.add(o)
             @Suppress("NAME_SHADOWING") var o: Any? = o
             val errMessage = StringBuilder()
-            errMessage.append(String.format("Object [%s] seems to be a referenced gradle tooling api object. (it may lead to memory leaks during import) Referencing path: ", o))
+            errMessage.append(
+                String.format(
+                    "Object [%s] seems to be a referenced gradle tooling api object. (it may lead to memory leaks during import) Referencing path: ",
+                    o
+                )
+            )
             while (o != null) {
                 errMessage.append(String.format("[%s] type: %s <-\r\n", o, o.javaClass.toString()))
                 o = referencingObjects[o]
@@ -322,7 +375,13 @@ private fun testExternalSubsystemForProxyMemoryLeak(externalProject: DataNode<Pr
             errorsCount++
         }
 
-        private fun saveToProcessIfRequired(processed: Set<Any>, toProcess: Queue<Any>, referrers: MutableMap<Any, Any>, referringObject: Any, o: Any) {
+        private fun saveToProcessIfRequired(
+            processed: Set<Any>,
+            toProcess: Queue<Any>,
+            referrers: MutableMap<Any, Any>,
+            referringObject: Any,
+            o: Any
+        ) {
             if (shouldBeProcessed(o, processed)) {
                 toProcess.add(o)
                 referrers[o] = referringObject
@@ -351,15 +410,33 @@ private fun testExternalSubsystemForProxyMemoryLeak(externalProject: DataNode<Pr
                                 it.get(nextObject)?.let { fieldValue ->
                                     when {
                                         fieldValue is Collection<*> -> for (o in (fieldValue as Collection<*>?)!!) {
-                                            if (o != null) saveToProcessIfRequired(processed, toProcess, referencingObjects, nextObject, o)
+                                            if (o != null) saveToProcessIfRequired(
+                                                processed,
+                                                toProcess,
+                                                referencingObjects,
+                                                nextObject,
+                                                o
+                                            )
                                         }
                                         fieldValue.javaClass.isArray -> for (i in 0 until Array.getLength(fieldValue)) {
                                             Array.get(fieldValue, i)?.let { arrayObject ->
-                                                saveToProcessIfRequired(processed, toProcess, referencingObjects, nextObject, arrayObject)
+                                                saveToProcessIfRequired(
+                                                    processed,
+                                                    toProcess,
+                                                    referencingObjects,
+                                                    nextObject,
+                                                    arrayObject
+                                                )
                                             }
 
                                         }
-                                        else -> saveToProcessIfRequired(processed, toProcess, referencingObjects, nextObject, fieldValue)
+                                        else -> saveToProcessIfRequired(
+                                            processed,
+                                            toProcess,
+                                            referencingObjects,
+                                            nextObject,
+                                            fieldValue
+                                        )
                                     }
                                 }
                             }
@@ -383,7 +460,12 @@ private fun testExternalSubsystemForProxyMemoryLeak(externalProject: DataNode<Pr
     if (memoryLeakChecker.errorsCount == 0) {
         finishOperation(OperationType.TEST, memoryLeakTestName, duration = ((System.nanoTime() - start) / 1000_000))
     } else {
-        finishOperation(OperationType.TEST, memoryLeakTestName, failureMessage = "Check for memory leaks finished with ${memoryLeakChecker.errorsCount} errors.", duration = ((System.nanoTime() - start) / 1000_000))
+        finishOperation(
+            OperationType.TEST,
+            memoryLeakTestName,
+            failureMessage = "Check for memory leaks finished with ${memoryLeakChecker.errorsCount} errors.",
+            duration = ((System.nanoTime() - start) / 1000_000)
+        )
     }
 }
 
@@ -398,11 +480,11 @@ fun readStoredConfigFiles(projectPath: String): ConfigFileSet {
 fun enableModelBuilderStatistics(projectPath: String) {
     val property = "-Didea.gradle.custom.tooling.perf=true"
     val propertiesFile = File(projectPath, "gradle.properties")
-    if (! propertiesFile.exists()) {
+    if (!propertiesFile.exists()) {
         propertiesFile.createNewFile()
     }
     val currentFileContent = propertiesFile.readText()
-    if (! currentFileContent.contains(property)) {
+    if (!currentFileContent.contains(property)) {
         val result = currentFileContent.split("\n").map { it.trim() }.map {
             if (it.startsWith("org.gradle.jvmargs=")) {
                 "$it $property"

@@ -90,8 +90,7 @@ public final class InternalCompileDriver {
     public void make(CompileScope scope, boolean withModalProgress, CompileStatusNotification callback) {
         if (validateCompilerConfiguration(scope)) {
             startup(scope, false, false, withModalProgress, callback, null);
-        }
-        else {
+        } else {
             callback.finished(true, 0, 0, DummyCompileContext.create(myProject));
         }
     }
@@ -124,11 +123,9 @@ public final class InternalCompileDriver {
                         }
                     }
                 }
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 LOG.error(e);
-            }
-            finally {
+            } finally {
                 ExitStatus exitStatus = COMPILE_SERVER_BUILD_STATUS.get(compileContext);
                 task.setEndCompilationStamp(exitStatus, System.currentTimeMillis());
                 result.set(exitStatus);
@@ -143,8 +140,7 @@ public final class InternalCompileDriver {
         if (!EventQueue.isDispatchThread() && indicatorProvider.getProgressIndicator() != null) {
             // if called from background process on pooled thread, run synchronously
             task.run(compileWork, null, indicatorProvider.getProgressIndicator());
-        }
-        else {
+        } else {
             task.start(compileWork, null);
         }
 
@@ -158,8 +154,7 @@ public final class InternalCompileDriver {
     public void compile(CompileScope scope, CompileStatusNotification callback) {
         if (validateCompilerConfiguration(scope)) {
             startup(scope, false, true, callback, null);
-        }
-        else {
+        } else {
             callback.finished(true, 0, 0, DummyCompileContext.create(myProject));
         }
     }
@@ -167,8 +162,7 @@ public final class InternalCompileDriver {
     private CompileContext doRebuild(CompileStatusNotification callback, final CompileScope compileScope) {
         if (validateCompilerConfiguration(compileScope)) {
             return startup(compileScope, true, false, callback, null);
-        }
-        else {
+        } else {
             callback.finished(true, 0, 0, DummyCompileContext.create(myProject));
             return null;
         }
@@ -191,11 +185,9 @@ public final class InternalCompileDriver {
         List<TargetTypeBuildScope> explicitScopes = CompileScopeUtil.getBaseScopeForExternalBuild(scope);
         if (explicitScopes != null) {
             scopes.addAll(explicitScopes);
-        }
-        else if (!compileContext.isRebuild() && (!paths.isEmpty() || !CompileScopeUtil.allProjectModulesAffected(compileContext))) {
+        } else if (!compileContext.isRebuild() && (!paths.isEmpty() || !CompileScopeUtil.allProjectModulesAffected(compileContext))) {
             CompileScopeUtil.addScopesForSourceSets(scope.getAffectedSourceSets(), scope.getAffectedUnloadedModules(), scopes, forceBuild);
-        }
-        else {
+        } else {
             scopes.addAll(CmdlineProtoUtil.createAllModulesScopes(forceBuild));
         }
         if (paths.isEmpty()) {
@@ -226,8 +218,7 @@ public final class InternalCompileDriver {
         final Map<String, String> builderParams;
         if (onlyCheckUpToDate) {
             builderParams = new HashMap<>();
-        }
-        else {
+        } else {
             Map<Key<?>, Object> exported = scope.exportUserData();
             if (!exported.isEmpty()) {
                 builderParams = new HashMap<>();
@@ -236,8 +227,7 @@ public final class InternalCompileDriver {
                     final String _value = entry.getValue().toString();
                     builderParams.put(_key, _value);
                 }
-            }
-            else {
+            } else {
                 builderParams = new HashMap<>();
             }
         }
@@ -261,8 +251,8 @@ public final class InternalCompileDriver {
             @Override
             public void handleFailure(@NotNull UUID sessionId, CmdlineRemoteProto.Message.Failure failure) {
                 //noinspection HardCodedStringLiteral
-                compileContext.addMessage(CompilerMessageCategory.ERROR, failure.hasDescription()? failure.getDescription() : "", null, -1, -1);
-                final String trace = failure.hasStacktrace()? failure.getStacktrace() : null;
+                compileContext.addMessage(CompilerMessageCategory.ERROR, failure.hasDescription() ? failure.getDescription() : "", null, -1, -1);
+                final String trace = failure.hasStacktrace() ? failure.getStacktrace() : null;
                 if (trace != null) {
                     LOG.info(trace);
                 }
@@ -281,8 +271,7 @@ public final class InternalCompileDriver {
                     if (message.hasDone()) {
                         indicator.setFraction(message.getDone());
                     }
-                }
-                else {
+                } else {
                     final CompilerMessageCategory category = convertToCategory(kind, CompilerMessageCategory.INFORMATION);
 
                     String sourceFilePath = message.hasSourceFilePath() ? message.getSourceFilePath() : null;
@@ -292,7 +281,7 @@ public final class InternalCompileDriver {
                     final long line = message.hasLine() ? message.getLine() : -1;
                     final long column = message.hasColumn() ? message.getColumn() : -1;
                     final String srcUrl = sourceFilePath != null ? VirtualFileManager.constructUrl(LocalFileSystem.PROTOCOL, sourceFilePath) : null;
-                    compileContext.addMessage(category, messageText, srcUrl, (int)line, (int)column, null, message.getModuleNamesList());
+                    compileContext.addMessage(category, messageText, srcUrl, (int) line, (int) column, null, message.getModuleNamesList());
                     if (compileContext.shouldUpdateProblemsView() && kind == CmdlineRemoteProto.Message.BuilderMessage.CompileMessage.Kind.JPS_INFO) {
                         // treat JPS_INFO messages in a special way: add them as info messages to the problems view
                         final Project project = compileContext.getProject();
@@ -376,15 +365,15 @@ public final class InternalCompileDriver {
     }
 
     private CompileContext startup(final CompileScope scope, final boolean isRebuild, final boolean forceCompile,
-                         final CompileStatusNotification callback, final CompilerMessage message) {
+                                   final CompileStatusNotification callback, final CompilerMessage message) {
         return startup(scope, isRebuild, forceCompile, false, callback, message);
     }
 
     private CompileContextImpl startup(final CompileScope scope,
-                         final boolean isRebuild,
-                         final boolean forceCompile,
-                         boolean withModalProgress, final CompileStatusNotification callback,
-                         final CompilerMessage message) {
+                                       final boolean isRebuild,
+                                       final boolean forceCompile,
+                                       boolean withModalProgress, final CompileStatusNotification callback,
+                                       final CompilerMessage message) {
         ApplicationManager.getApplication().assertIsDispatchThread();
 
         final boolean isUnitTestMode = ApplicationManager.getApplication().isUnitTestMode();
@@ -424,7 +413,7 @@ public final class InternalCompileDriver {
                 }
                 if (isRebuild) {
                     CompilerUtil.runInContext(compileContext, JavaCompilerBundle.message("progress.text.clearing.build.system.data"),
-                            (ThrowableRunnable<Throwable>)() -> compilerCacheManager
+                            (ThrowableRunnable<Throwable>) () -> compilerCacheManager
                                     .clearCaches(compileContext));
                 }
                 final boolean beforeTasksOk = executeCompileTasks(compileContext, true);
@@ -449,14 +438,11 @@ public final class InternalCompileDriver {
                         COMPILE_SERVER_BUILD_STATUS.set(compileContext, ExitStatus.ERRORS);
                     }
                 }
-            }
-            catch (ProcessCanceledException ignored) {
+            } catch (ProcessCanceledException ignored) {
                 compileContext.putUserDataIfAbsent(COMPILE_SERVER_BUILD_STATUS, ExitStatus.CANCELLED);
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 LOG.error(e); // todo
-            }
-            finally {
+            } finally {
                 buildManager.allowBackgroundTasks();
 //                compilerCacheManager.flushCaches();
                 // flushCaches does not work in headless mode
@@ -481,12 +467,15 @@ public final class InternalCompileDriver {
         return compileContext;
     }
 
-    @Nullable @TestOnly
+    @Nullable
+    @TestOnly
     public static ExitStatus getExternalBuildExitStatus(CompileContext context) {
         return context.getUserData(COMPILE_SERVER_BUILD_STATUS);
     }
 
-    /** @noinspection SSBasedInspection*/
+    /**
+     * @noinspection SSBasedInspection
+     */
     private long notifyCompilationCompleted(final CompileContextImpl compileContext, final CompileStatusNotification callback, final ExitStatus _status) {
         long endCompilationStamp = System.currentTimeMillis();
         compileContext.getBuildSession().setEndCompilationStamp(_status, endCompilationStamp);
@@ -499,8 +488,7 @@ public final class InternalCompileDriver {
             try {
                 errorCount = compileContext.getMessageCount(CompilerMessageCategory.ERROR);
                 warningCount = compileContext.getMessageCount(CompilerMessageCategory.WARNING);
-            }
-            finally {
+            } finally {
                 if (callback != null) {
                     callback.finished(_status == ExitStatus.CANCELLED, errorCount, warningCount, compileContext);
                 }
@@ -510,7 +498,7 @@ public final class InternalCompileDriver {
                 final String statusMessage = createStatusMessage(_status, warningCount, errorCount, duration);
                 // Showing ui messages is not required
 
-                final String wrappedMessage = _status != ExitStatus.UP_TO_DATE?
+                final String wrappedMessage = _status != ExitStatus.UP_TO_DATE ?
                         HtmlChunk.link("#", statusMessage).toString() : statusMessage;
                 // Showing ui messages is not required
 
@@ -524,22 +512,20 @@ public final class InternalCompileDriver {
         return duration;
     }
 
-    private static @Nls String createStatusMessage(final ExitStatus status, final int warningCount, final int errorCount, long duration) {
+    private static @Nls
+    String createStatusMessage(final ExitStatus status, final int warningCount, final int errorCount, long duration) {
         String message;
         if (status == ExitStatus.CANCELLED) {
             message = JavaCompilerBundle.message("status.compilation.aborted");
-        }
-        else if (status == ExitStatus.UP_TO_DATE) {
+        } else if (status == ExitStatus.UP_TO_DATE) {
             message = JavaCompilerBundle.message("status.all.up.to.date");
-        }
-        else  {
+        } else {
             String durationString = NlsMessages.formatDurationApproximate(duration);
             if (status == ExitStatus.SUCCESS) {
                 message = warningCount > 0
                         ? JavaCompilerBundle.message("status.compilation.completed.successfully.with.warnings", warningCount, durationString)
                         : JavaCompilerBundle.message("status.compilation.completed.successfully", durationString);
-            }
-            else {
+            } else {
                 message = JavaCompilerBundle.message("status.compilation.completed.successfully.with.warnings.and.errors",
                         errorCount, warningCount, durationString);
             }
@@ -562,11 +548,9 @@ public final class InternalCompileDriver {
         progressManagerTask.start(() -> {
             try {
                 task.execute(compileContext);
-            }
-            catch (ProcessCanceledException ex) {
+            } catch (ProcessCanceledException ex) {
                 // suppressed
-            }
-            finally {
+            } finally {
                 if (onTaskFinished != null) {
                     onTaskFinished.run();
                 }
@@ -591,18 +575,16 @@ public final class InternalCompileDriver {
                         if (!task.execute(context)) {
                             return false;
                         }
-                    } catch (ProcessCanceledException e){
+                    } catch (ProcessCanceledException e) {
                         throw e;
-                    }
-                    catch (Throwable t) {
+                    } catch (Throwable t) {
                         LOG.error("Error executing task", t);
                         context.addMessage(CompilerMessageCategory.INFORMATION, JavaCompilerBundle.message("error.task.0.execution.failed", task.toString()), null, -1, -1);
                     }
 
                 }
             }
-        }
-        finally {
+        } finally {
             progressIndicator.popState();
             StatusBar statusBar = WindowManager.getInstance().getStatusBar(myProject);
             if (statusBar != null) {
@@ -632,11 +614,9 @@ public final class InternalCompileDriver {
             if (!validateOutputs(modulesWithSources)) return false;
             if (!validateCyclicDependencies(scopeModules)) return false;
             return true;
-        }
-        catch (ProcessCanceledException e) {
+        } catch (ProcessCanceledException e) {
             return false;
-        }
-        catch (Throwable e) {
+        } catch (Throwable e) {
             LOG.error(e);
             return false;
         }
@@ -680,8 +660,7 @@ public final class InternalCompileDriver {
                 CompilerModuleExtension compilerExtension = CompilerModuleExtension.getInstance(module);
                 projectOutputNotSpecified |= compilerExtension != null && compilerExtension.isCompilerOutputPathInherited();
                 modulesWithoutOutputPathSpecified.add(module.getName());
-            }
-            else {
+            } else {
                 if (outputPath == null) {
                     if (hasSources(module, JavaSourceRootType.SOURCE)) {
                         modulesWithoutOutputPathSpecified.add(module.getName());
@@ -715,8 +694,7 @@ public final class InternalCompileDriver {
                 final Sdk moduleJdk = ModuleRootManager.getInstance(module).getSdk();
                 if (jdk == null) {
                     jdk = moduleJdk;
-                }
-                else {
+                } else {
                     if (!jdk.equals(moduleJdk)) {
                         showCyclicModulesErrorNotification("error.chunk.modules.must.have.same.jdk", ModuleSourceSet.getModules(sourceSets));
                         return false;
@@ -726,8 +704,7 @@ public final class InternalCompileDriver {
                 LanguageLevel moduleLanguageLevel = EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(module);
                 if (languageLevel == null) {
                     languageLevel = moduleLanguageLevel;
-                }
-                else {
+                } else {
                     if (!languageLevel.equals(moduleLanguageLevel)) {
                         showCyclicModulesErrorNotification("error.chunk.modules.must.have.same.language.level", ModuleSourceSet.getModules(sourceSets));
                         return false;
@@ -747,7 +724,7 @@ public final class InternalCompileDriver {
     }
 
     private static String getModulesString(Collection<? extends Module> modulesInChunk) {
-        return StringUtil.join(modulesInChunk, module->"\""+module.getName()+"\"", "\n");
+        return StringUtil.join(modulesInChunk, module -> "\"" + module.getName() + "\"", "\n");
     }
 
     private static boolean hasSources(Module module, final JavaSourceRootType rootType) {
@@ -766,15 +743,18 @@ public final class InternalCompileDriver {
     }
 
     public static CompilerMessageCategory convertToCategory(CmdlineRemoteProto.Message.BuilderMessage.CompileMessage.Kind kind, CompilerMessageCategory defaultCategory) {
-        switch(kind) {
-            case ERROR: case INTERNAL_BUILDER_ERROR:
+        switch (kind) {
+            case ERROR:
+            case INTERNAL_BUILDER_ERROR:
                 return CompilerMessageCategory.ERROR;
-            case WARNING: return CompilerMessageCategory.WARNING;
+            case WARNING:
+                return CompilerMessageCategory.WARNING;
             case INFO:
             case JPS_INFO:
             case OTHER:
                 return CompilerMessageCategory.INFORMATION;
-            default: return defaultCategory;
+            default:
+                return defaultCategory;
         }
     }
 }

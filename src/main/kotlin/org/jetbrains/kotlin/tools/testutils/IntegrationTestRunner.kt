@@ -17,8 +17,8 @@ class IntegrationTestRunner : ApplicationStarterBase("runIntegrationTest", 0) {
     override fun isHeadless(): Boolean = true
 
     override fun getUsageMessage(): String =
-            "Usage: runIntegrationTest <testName> <arguments> where testNAme one of:${System.lineSeparator()}" +
-                    testSuits.joinToString(separator = ",", postfix = ".") { it.javaClass.simpleName }
+        "Usage: runIntegrationTest <testName> <arguments> where testNAme one of:${System.lineSeparator()}" +
+                testSuits.joinToString(separator = ",", postfix = ".") { it.javaClass.simpleName }
 
     private fun findSuite(args: List<out String>): List<TestSuite> {
         val subArgs = subArgs(args)
@@ -44,7 +44,10 @@ class IntegrationTestRunner : ApplicationStarterBase("runIntegrationTest", 0) {
         }
     }
 
-    override fun processExternalCommandLineAsync(args: MutableList<String>, currentDirectory: String?): Future<CliResult> {
+    override fun processExternalCommandLineAsync(
+        args: MutableList<String>,
+        currentDirectory: String?
+    ): Future<CliResult> {
         if (!checkArguments(args)) {
             return CliResult.error(1, usageMessage)
         }
@@ -72,11 +75,12 @@ class IntegrationTestRunner : ApplicationStarterBase("runIntegrationTest", 0) {
             CliResult.error(2, "Invalid command line arguments")
         } catch (e: Exception) {
             e.printStackTrace()
-            CliResult.error(3,"Failed to run ${args[1]}")
+            CliResult.error(3, "Failed to run ${args[1]}")
         }
     }
 
-    private fun subArgs(args: List<out String>): List<String> = if (args.size == 2) emptyList<String>() else args.toList().subList(2, args.size - 1)
+    private fun subArgs(args: List<out String>): List<String> =
+        if (args.size == 2) emptyList<String>() else args.toList().subList(2, args.size - 1)
 
 }
 
