@@ -26,7 +26,6 @@ import com.intellij.openapi.externalSystem.util.ExternalSystemUtil
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ex.ProjectManagerEx
-import com.intellij.openapi.project.getProjectCachePath
 import com.intellij.openapi.projectRoots.JavaSdk
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.ProjectRootManager
@@ -46,7 +45,6 @@ import java.io.FileOutputStream
 import java.lang.reflect.Array
 import java.lang.reflect.Field
 import java.lang.reflect.Proxy
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.concurrent.CountDownLatch
