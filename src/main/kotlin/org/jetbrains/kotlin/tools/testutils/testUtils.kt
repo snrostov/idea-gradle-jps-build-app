@@ -284,7 +284,11 @@ fun buildProject(project: Project?): Boolean {
 }
 
 fun uploadCaches(project: Project?) {
-    val remoteCacheUrl = "https://temporary-files-cache.labs.jb.gg/cache/jps/kotlin/dev/"
+    val remoteCacheUrl = System.getenv("remote_cache_url")
+    if (remoteCacheUrl == null) {
+        printException(Exception("Url for remote cache is not set"))
+        return
+    }
     CompilationOutputsUploader(remoteCacheUrl, project).upload()
 }
 
