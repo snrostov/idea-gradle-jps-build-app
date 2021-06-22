@@ -89,27 +89,14 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
         File(pathString, ".idea").mkdirs()
     }
 
-//    0
-//    val project = ProjectUtil.openProject(path, null, false)
-//    1
-//    val openProjectOptions = OpenProjectTask.withProjectToClose(null, false).withRunConfigurators()
-//    val project = ProjectManagerEx.getInstanceEx().openProject(Paths.get(pathString), openProjectOptions)
-//    2
-//    val project = ProjectUtil.openOrCreateProject("asd")
-//    3
-//    val project = ProjectUtil.openOrImport(Paths.get(pathString))
-//    4
     println("Path of root folder: ${System.getProperty("idea.project.path")}")
     val projectName = "jps"
     var project = ProjectUtil.openOrCreateProject(projectName)
-//System.getProperty(propertyName);
-    val a = ProjectUtil.getOpenProjects()
-    println(a)
+
     if (project == null) {
         printMessage("Unable to open project 1", MessageStatus.ERROR)
         return null
     }
-
 
     printProgress("Project loaded, refreshing from Gradle")
     WriteAction.runAndWait<RuntimeException> {
@@ -157,10 +144,6 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
         }
     }
 
-//    linkAndRefreshGradleProject(pathString, project)
-    //ExternalSystemActionsCollector.trigger(project, GradleConstants.SYSTEM_ID, this, e)
-//    val importSpec = ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-//    ExternalSystemUtil.refreshProjects(importSpec.forceWhenUptodate(true))
     ExternalSystemUtil.refreshProject(
         project,
         GradleConstants.SYSTEM_ID,
@@ -179,13 +162,12 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 
     printProgress("Save IDEA projects")
 
-    // close?
     project.save()
     ProjectManagerEx.getInstanceEx().openProject(project)
     FileDocumentManager.getInstance().saveAllDocuments()
     ApplicationManager.getApplication().saveSettings()
     ApplicationManager.getApplication().saveAll()
-
+    ProjectManagerEx.getInstance().closeAndDispose(project)
     project = ProjectUtil.openOrCreateProject(projectName)
     if(project == null) {
         printMessage("Unable to open project 3", MessageStatus.ERROR)
@@ -197,6 +179,14 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
 }
 
 fun setDelegationMode(path: String, project: Project, delegationMode: Boolean) {
+    //    public void actionPerformed(@NotNull AnActionEvent e) {
+//        val file: VirtualFile = getFile()
+//        if (file != null && file.isValid) {
+//            val description = ExcludeEntryDescription(file, false, true, myProject)
+//            CompilerConfiguration.getInstance(myProject).excludedEntriesConfiguration.addExcludeEntryDescription(
+//                description
+//            )
+//            FileStatusManager.getInstance(myProject).fileStatusesChanged()
     val configuration = CompilerConfiguration.getInstance(project)
     val cfg: ExcludesConfiguration = configuration.getExcludedEntriesConfiguration()
     println("$path/buildSrc")
@@ -268,13 +258,13 @@ fun buildProject(project: Project?): Boolean {
             }
         }
 
-        printMessage("Enable portable build caches for idea 202")
+        printMessage("Enable portable build caches for idea 211")
         BuildManager.getInstance().isGeneratePortableCachesEnabled = true
         enableJpsLogging()
 
         CompilerConfigurationImpl.getInstance(project).setBuildProcessHeapSize(3500)
         CompilerWorkspaceConfiguration.getInstance(project).PARALLEL_COMPILATION = true
-        //CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS = "-Dkotlin.daemon.enabled=false"
+        CompilerWorkspaceConfiguration.getInstance(project).COMPILER_PROCESS_ADDITIONAL_VM_OPTIONS = "-Dkotlin.daemon.enabled=false"
 
         val compileContext = InternalCompileDriver(project).rebuild(callback)
         while (!finishedLautch.await(1, TimeUnit.MINUTES)) {
