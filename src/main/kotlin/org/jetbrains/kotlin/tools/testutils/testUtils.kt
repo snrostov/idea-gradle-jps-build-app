@@ -165,7 +165,7 @@ private fun doImportProject(projectPath: String, jdkPath: String, metricsSuffixN
     FileDocumentManager.getInstance().saveAllDocuments()
     ApplicationManager.getApplication().saveSettings()
     ApplicationManager.getApplication().saveAll()
-    ProjectManagerEx.getInstance().closeAndDispose(project)
+    //ProjectManagerEx.getInstance().closeAndDispose(project)
     project = ProjectUtil.openOrCreateProject(projectName)
     if(project == null) {
         printMessage("Unable to open project 3", MessageStatus.ERROR)
